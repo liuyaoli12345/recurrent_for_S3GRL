@@ -7,6 +7,7 @@
 | 9.17 | 了解什么是Link Prediction                                   | 十分粗浅的了解了一下经典Link Prediction目标和意义，但是我选的论文是一个新方法，希望这一点知识有帮助 |
 | 9.18 | 了解了一下GNN和作者第一个比较的算法GCN                      | 还没有开始正式开始看作者改进的SGRL，搜了一下这个算法关注度貌似并不高，希望不会被作者背刺嘞 |
 | 9.20 | 尝试在colab上把项目跑起来，但是卡在一个有五万多个参数的地方 | google colab是好东西，如果再大方一点就好了苦鲁西             |
+| 9.21 | 继续尝试运行                                                | 现在可以在大规模阉割数据集的条件下完成至少一轮运行，今天运气比较好，google没有跑到一半掐掉我的代码（其实今天也尝试了一下kaggle和ali-cloud的教育gpu平台，kaggle gpu倒是很大方，但是cpu和ram也太小气了，阿里云的是用不了一点...） |
 
 
 
@@ -85,3 +86,150 @@ GNN的置换等变依赖消息传递层MPNN，一个消息传递层大致是这�
 ## 复现代码
 
 见google colab
+
+### 复现中的主要挑战：算力限制
+
+#### Google Colab使用心得
+
+*希望那些在colab上跑stable diffusion的寄生虫可以收敛点，我谢谢你们了...*
+
+- Google colab最长运行时间是12小时，但是实际上会经常因为资源不足大概运行到3小时就断开
+- 使用Gdrive真的很方便，我想这是大家不用kaggle用colab的主要原因
+- 等我有钱了一定冲会员感谢google，我觉得我大学五年五万的学费一万应该交给google，一万交给openai，一万交给cloudflare，一万交给github，五千交给github，剩下的分给bilibili、kaggle、stackoverflow、csdn，南大就配收个住宿费
+
+### 算力真的不够！
+
+colab为我提供了12G的运行内存和15G的显存，这个算法最搞笑的是它硬要GPU，要了它又不怎么用，显存绰绰有余，内存直接爆炸了，我有机会一定好好检查他到底怎么写的（
+
+下面这张图是我只跑20%训练集的情况，显存怎么搞都是占1G，内存只要我敢跑大于50%的数据集它就敢爆炸（broken pipe）
+
+![](https://files.lsmcloud.top/blogba29231cd495ceb6c0915cf88a59070f.png)
+
+另外一个麻烦的是时间限制，即便运气超级无敌好，我也只能跑12个小时，而理想的情况是：
+
+**利用10个seed，运行10轮，每次运行100%的数据集，并且用大于0的k_sign**
+
+但是细想我的情况，我应该最极限只能跑：
+
+**利用3个seed，运行3轮，每次运行20%的数据集，并且令k_sign为0**
+
+现在是9.21，我已经成功完成了一轮：
+
+结果是
+
+```shell
+WARNING:root:The OGB package is out of date. Your version is 1.3.5, while the latest version is 1.3.6.
+Run 1 of ogbl-collab with id ogbl_collab_pos_plus_11_uvai using device cuda:0
+Current arguments accepted are: {'M': 0,
+ 'base_gae': '',
+ 'batch_size': 64,
+ 'cache_dynamic': False,
+ 'calc_ratio': False,
+ 'checkpoint_training': False,
+ 'continue_from': None,
+ 'cuda_device': 0,
+ 'data_appendix': '',
+ 'dataset': 'ogbl-collab',
+ 'dataset_split_num': 1,
+ 'dataset_stats': False,
+ 'delete_dataset': False,
+ 'device': device(type='cuda', index=0),
+ 'dropedge': 0.0,
+ 'dropout': 0.5,
+ 'dynamic_test': True,
+ 'dynamic_train': True,
+ 'dynamic_val': True,
+ 'edge_feature': '',
+ 'epochs': 10,
+ 'eval_steps': 1,
+ 'fast_split': False,
+ 'hidden_channels': 1024,
+ 'init_features': 'n2v',
+ 'init_representation': '',
+ 'k_heuristic': 1,
+ 'k_node_set_strategy': 'intersection',
+ 'k_pool_strategy': 'mean',
+ 'keep_old': True,
+ 'log_steps': 1,
+ 'loss_fn': '',
+ 'lr': 0.0001,
+ 'm': 0,
+ 'max_nodes_per_hop': None,
+ 'model': 'SIGN',
+ 'n2v_dim': 16,
+ 'neg_ratio': 1,
+ 'node_label': 'zo',
+ 'normalize_feats': False,
+ 'num_hops': 1,
+ 'num_layers': -1,
+ 'num_workers': 70,
+ 'only_test': False,
+ 'optimize_sign': True,
+ 'pairwise': False,
+ 'pool_operatorwise': True,
+ 'pretrained_node_embedding': None,
+ 'profile': False,
+ 'ratio_per_hop': 1,
+ 'runs': 1,
+ 'save_appendix': '',
+ 'seed': 1,
+ 'sign_k': 0,
+ 'sign_type': 'PoS',
+ 'size_only': False,
+ 'sortpool_k': -1,
+ 'split_by_year': True,
+ 'split_test_ratio': 0.1,
+ 'split_val_ratio': 0.05,
+ 'test_multiple_models': False,
+ 'test_percent': 20,
+ 'train_gae': False,
+ 'train_mf': False,
+ 'train_mlp': False,
+ 'train_n2v': False,
+ 'train_node_embedding': False,
+ 'train_percent': 20,
+ 'use_edge_weight': False,
+ 'use_feature': True,
+ 'use_heuristic': None,
+ 'use_mlp': False,
+ 'use_valedges_as_input': True,
+ 'val_percent': 20}
+Results will be saved in results/ogbl-collab_20230921131340_seed1
+Command line input: python sgrl_run_manager.py --config configs/ogbl/ogbl_collab.json --results_json ogbl_collab_results.json
+ is saved.
+Filtering ogbl-collab training set to >= 2010 year
+Adding validation edges to training edges
+Init features using: n2v
+Using cached n2v embeddings. Skipping n2v pretraining. Parameters are not counted.
+Setting up Train data
+Setting up Val data
+Setting up Test data
+Total Prep time: 8.076520744999925 sec
+S3GRLLight selected
+Model architecture is: S3GRLLight(
+  (operator_diff): MLP(17, 1024)
+  (link_pred_mlp): MLP(2048, 1024, 1)
+)
+Total number of parameters is 2121729
+100%|█████████████████████████████| 7681/7681 [29:20<00:00,  4.36it/s]
+100%|███████████████████████████████| 501/501 [02:09<00:00,  3.88it/s]
+100%|███████████████████████████████| 458/458 [01:57<00:00,  3.89it/s]
+Hits@20
+Run: 01, Epoch: 01, Loss: 0.0279, Valid: 98.94%, Test: 68.72%
+Hits@50
+Run: 01, Epoch: 01, Loss: 0.0279, Valid: 99.43%, Test: 72.32%
+Hits@100
+Run: 01, Epoch: 01, Loss: 0.0279, Valid: 99.60%, Test: 75.54%
+Hits@20
+Picked Valid: 98.94, Picked Test: 68.72
+Hits@50
+Picked Valid: 99.43, Picked Test: 72.32
+Hits@100
+Picked Valid: 99.60, Picked Test: 75.54
+```
+
+有点奇怪好像比作者跑出来还要好？
+
+![](https://files.lsmcloud.top/blog1127042e0541dcdcd41b7a342acd2f04.png)
+
+小鼠鼠决定后面再看看，今天就回去洗澡好咯
