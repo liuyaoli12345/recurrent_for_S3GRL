@@ -1,5 +1,7 @@
 # 复现S3GRL
 
+[TOC]
+
 ## TimeLine
 
 | 时间 | 内容                                                        | 心得                                                         |
@@ -18,6 +20,10 @@
 小鼠鼠对于被背刺已经认命了，被背刺是小鼠鼠的命运...
 
 现在小鼠鼠只能一个人尝试复现这篇论文，希望一切顺利...
+
+![](https://files.lsmcloud.top/blogf55f695cecda452019934ffdd0d7a682.jpg)
+
+
 
 ## 前置知识
 
@@ -82,6 +88,14 @@ GNN的置换等变依赖消息传递层MPNN，一个消息传递层大致是这�
 图卷积网络层引入了一个激活函数，著名激活函数包括ReLU等，激活函数根据节点的特征矩阵、图邻接矩阵、图度矩阵和参数矩阵得到节点矩阵**（这个我没有看懂）**
 
 ![](https://files.lsmcloud.top/bloge9c8a1ece53057436be9cc3dd4bf72ba.png)
+
+### SGRLs
+
+子图表示学习法(Subgraph Representation Learning Approach)是作者重点关注的方法，这个方法将链接预测问题视为对目标$\{u,v\}$周围的封闭子图$G_{uv}$的二分类问题，SGRLs的目标是分类封闭子图$G_{uv}$是closed还是open（我不知道这两个状态是什么意思，但是作者说这可以对应连接是否存在），对于每个$G_{uv}$，SGRLs通过类似卷积运算符的堆栈（这是什么？）的方式生成一个节点特征矩阵，然后和GCN一样，通过节点特征矩阵得到链接概率，不同的是池化函数作用于所有节点表示(不仅目标节点),得到子图的固定大小表示。
+
+为提高GNN在子图上的表达能力,SGRL在节点特征中加入结构特征(如与目标节点的相对位置)。这些增强特征称为节点标签。
+
+SGRL方法通过子图提取、节点标记以及对大量重叠子图的独立操作带来了高计算成本。这在更密集的图和更深的子图中计算开销会呈指数增长。
 
 ## 复现代码
 
@@ -233,3 +247,41 @@ Picked Valid: 99.60, Picked Test: 75.54
 ![](https://files.lsmcloud.top/blog1127042e0541dcdcd41b7a342acd2f04.png)
 
 小鼠鼠决定后面再看看，今天就回去洗澡好咯
+
+### 终于成功跑了一次！
+
+现在9.24 12:04 终于是成功将整个训练、验证和测试流程走了一遍！
+
+测试结果可以在[这里](https://files.lsmcloud.top/blog4be4e9b37d4247caa739c2ca1241dfc0.json)下载到！
+
+虽然跑的是一个超级无敌阉割版的流程，作者的训练验证测试是100%测试集、100%验证集、100%测试集，使用10个种子运行十轮，每轮运行10次Epoch，而我则是15%测试集、15%验证集、15%测试集，使用2个种子运行两轮，每轮运行2次Epoch...
+
+现在最大的困扰是我的测试结果"Average Test AUC": "73.43"
+
+```shell
+All runs:
+Highest Valid: 98.97 ± nan
+Highest Test: 69.35 ± nan
+
+(Precision of 5)Highest Test: 69.35000 ± nan
+
+Hits@50
+All runs:
+Highest Valid: 99.32 ± nan
+Highest Test: 72.51 ± nan
+
+(Precision of 5)Highest Test: 72.51000 ± nan
+
+Hits@100
+All runs:
+Highest Valid: 99.66 ± nan
+Highest Test: 76.24 ± nan
+
+(Precision of 5)Highest Test: 76.24000 ± nan
+
+Total number of parameters is 5895617
+Results are saved in results/ogbl-collab_20230924030252_seed2
+fin.
+```
+
+这个结果比作者的训练结果明显要好，这让我担心是不是我的参数导致了这种情况，这是我下一步要研究的
